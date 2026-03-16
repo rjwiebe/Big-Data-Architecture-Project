@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rtd-denver-live-data"
+version = "0.1.0"
+description = "Collect RTD Denver GTFS-RT feed data into PostgreSQL for ML workflows"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "gtfs-realtime-bindings==1.0.0",
+  "psycopg2-binary==2.9.9",
+  "python-dotenv==1.0.1",
+  "redis==5.2.1",
+  "requests==2.32.3"
+]
+
+[project.scripts]
+rtd-collector = "rtd_collector.main:main"
+rtd-db-migrate = "rtd_collector.migrate:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

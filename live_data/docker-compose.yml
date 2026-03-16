@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: rtd_live_postgres
+    environment:
+      POSTGRES_DB: rtd_live
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - rtd_live_pgdata:/var/lib/postgresql/data
+
+volumes:
+  rtd_live_pgdata:
