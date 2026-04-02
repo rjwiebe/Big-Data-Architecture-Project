@@ -171,6 +171,81 @@ async def get_route_details(db: DBConnection, route_id: str) -> dict | None:
         "shape_points": [{"latitude": shp['latitude'], "longitude": shp['longitude']} for shp in shape_rows]
     }
 
+async def search_routes(
+    db: DBConnection,
+    orig_lat: float,
+    orig_lon: float,
+    dest_lat: float,
+    dest_lon: float,
+    limit: int = 10,
+) -> list[dict]:
+    """
+    Find transit routes that serve stops near both the origin and destination.
+    Returns routes where a trip visits an origin-area stop before a destination-area stop,
+    confirming travel direction is correct.
+    """
+    query = """
+    WITH origin_stops AS (
+        SELECT stop_id, stop_name,
+            ( 6371000 * acos(
+                cos( radians($1) ) * cos( radians( stop_lat ) ) *
+                cos( radians( stop_lon ) - radians($2) ) +
+                sin( radians($1) ) * sin( radians( stop_lat ) )
+            ) ) AS distance_meters
+        FROM stops
+        ORDER BY distance_meters ASC
+        LIMIT 25
+    ),
+    dest_stops AS (
+        SELECT stop_id, stop_name,
+            ( 6371000 * acos(
+                cos( radians($3) ) * cos( radians( stop_lat ) ) *
+                cos( radians( stop_lon ) - radians($4) ) +
+                sin( radians($3) ) * sin( radians( stop_lat ) )
+            ) ) AS distance_meters
+        FROM stops
+        ORDER BY distance_meters ASC
+        LIMIT 25
+    )
+    SELECT DISTINCT ON (r.route_id)
+        r.route_id,
+        r.route_short_name,
+        r.route_long_name,
+        r.route_type,
+        os.stop_id   AS boarding_stop_id,
+        os.stop_name AS boarding_stop_name,
+        os.distance_meters AS origin_distance_meters,
+        ds.stop_id   AS alighting_stop_id,
+        ds.stop_name AS alighting_stop_name,
+        ds.distance_meters AS dest_distance_meters
+    FROM origin_stops os
+    JOIN stop_times st_orig ON st_orig.stop_id = os.stop_id
+    JOIN stop_times st_dest ON st_dest.trip_id = st_orig.trip_id
+    JOIN dest_stops ds       ON ds.stop_id = st_dest.stop_id
+    JOIN trips t             ON t.trip_id  = st_orig.trip_id
+    JOIN routes r            ON r.route_id = t.route_id
+    WHERE st_orig.stop_sequence < st_dest.stop_sequence
+    ORDER BY r.route_id, (os.distance_meters + ds.distance_meters) ASC
+    LIMIT $5;
+    """
+    rows = await db.fetch(query, orig_lat, orig_lon, dest_lat, dest_lon, limit)
+    return [
+        {
+            "route_id": row["route_id"],
+            "route_short_name": row["route_short_name"],
+            "route_long_name": row["route_long_name"],
+            "route_type": row["route_type"],
+            "boarding_stop_id": row["boarding_stop_id"],
+            "boarding_stop_name": row["boarding_stop_name"],
+            "origin_distance_meters": round(row["origin_distance_meters"], 2),
+            "alighting_stop_id": row["alighting_stop_id"],
+            "alighting_stop_name": row["alighting_stop_name"],
+            "dest_distance_meters": round(row["dest_distance_meters"], 2),
+        }
+        for row in rows
+    ]
+
+
 async def get_route_vehicles_realtime(redis_client: RedisClient, route_id: str) -> list[dict]:
     # Stub: query Redis for ALL `vehicle_positions` currently active for a specific `route_id`.
     # rtd_collector parses the PB payload into DB & Redis.
