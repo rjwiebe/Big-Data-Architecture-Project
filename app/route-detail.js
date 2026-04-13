@@ -1,16 +1,31 @@
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { fetchRouteDetails } from '@/lib/api';
 import MapScreen from '@/components/MapView';
 
 
 //page when clicking bus card, shows more details about the route and arrival times, walking time, and a scrollable list of past arrivals at that stop
 export default function RouteDetail() {
   const router = useRouter();
-  const { route, destination, stop, color, minutes, nextArrivals } = useLocalSearchParams();
+  const { route, destination, stop, color, minutes, nextArrivals, routeId, stopId } = useLocalSearchParams();
   const arrivals = nextArrivals ? JSON.parse(nextArrivals) : [];
-  const stops = []; // placeholder till we can fetch from API
+  const [stops, setStops] = useState([]);
   const [mapExpanded, setMapExpanded] = useState(false);
+
+  useEffect(() => {
+    async function loadStops() {
+      if (!routeId) return;
+      try {
+        const data = await fetchRouteDetails(routeId);
+        setStops(data.stops || []);
+      } catch {
+        setStops([]);
+      }
+    }
+    loadStops();
+  }, [routeId]);
+
   return (
    
       <View style={{ flex: 1 }}>
@@ -46,28 +61,28 @@ export default function RouteDetail() {
       {/* stop timeline, past stops, nearest stop, future stops  */}
       <View style={styles.timeline}>
          <View style={styles.timelineLine}/>
-          {stops.map((stop, index) => (
-            <View key={index} style={styles.timelineItem}>
-              <View style={[styles.stopDot, stop.isActive && styles.stopDotActive]} />
-              <Text style={[
-                styles.stopName, stop.You && styles.stopNameBold, 
-                !stop.isActive && !stop.You && styles.stopNameDim
-              ]}>
-                {stop.name} 
-              </Text>
-              <Text style={styles.stopTime}>{stop.time}</Text>
-            </View>
-          ))}
+         {stops.map((s, index) => (
+  <View key={index} style={styles.timelineItem}>
+    <View style={[styles.stopDot, s.stop_name === stop && styles.stopDotActive]} />
+    <Text style={[
+      styles.stopName,
+      s.stop_name === stop && styles.stopNameBold,
+      s.stop_name !== stop && styles.stopNameDim,
+    ]}>
+      {s.stop_name}
+    </Text>
+  </View>
+))}
 
       </View>
        </ScrollView>
 
 
   <View style={{ height: mapExpanded ? 400 : 150 }}>
-    <MapScreen
-      onAddressChange={(s,c) => { setStreet(s); setCity(c); }}
-      onLocationChange={(location) => setCoords(location)}
-    />
+  <MapScreen
+  onAddressChange={() => {}}
+  onLocationChange={() => {}}
+/>
     {
       !mapExpanded && (<TouchableOpacity style = {styles.expandBtn}
       onPress = {() => setMapExpanded(true)}
@@ -145,6 +160,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 16,
     position: 'relative',
+    minHeight: 200,
   },
   timelineLine: {
     position: 'absolute',
