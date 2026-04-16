@@ -86,6 +86,7 @@ def make_client():
             redis_url=None,
             allowed_origins=[],
             port=8080,
+            redis_ttl=900,
         ),
         connect_external_services=False,
     )

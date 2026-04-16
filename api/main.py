@@ -200,7 +200,11 @@ def create_lifespan(
         if not hasattr(app.state, "db"):
             app.state.db = DBConnection(resolved_settings.postgres_dsn)
         if not hasattr(app.state, "redis"):
-            app.state.redis = RedisClient(resolved_settings.redis_url)
+            # app.state.redis = RedisClient(resolved_settings.redis_url)
+            app.state.redis = RedisClient(
+                resolved_settings.redis_url, 
+                ttl=resolved_settings.redis_ttl
+            )
 
         if connect_external_services:
             await app.state.db.connect()
