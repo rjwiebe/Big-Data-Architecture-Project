@@ -64,7 +64,10 @@ export default function RouteDetail() {
 
 
   <View style={{ height: mapExpanded ? 400 : 150 }}>
-    <MapScreen />
+    <MapScreen
+      onAddressChange={(s,c) => { setStreet(s); setCity(c); }}
+      onLocationChange={(location) => setCoords(location)}
+    />
     {
       !mapExpanded && (<TouchableOpacity style = {styles.expandBtn}
       onPress = {() => setMapExpanded(true)}

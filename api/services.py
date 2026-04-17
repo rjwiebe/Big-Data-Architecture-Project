@@ -102,7 +102,7 @@ async def get_stop_schedule_with_realtime(
     JOIN trips t ON st.trip_id = t.trip_id
     JOIN routes r ON t.route_id = r.route_id
     WHERE st.stop_id = $1
-    ORDER BY st.arrival_seconds NULLS LAST, st.arrival_time
+    ORDER BY st.arrival_time
     LIMIT 20;
     """
     rows = await db.fetch(query, stop_id)
