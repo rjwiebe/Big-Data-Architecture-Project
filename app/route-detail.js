@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchRouteDetails } from '@/lib/api';
 import MapScreen from '@/components/MapView';
+import { useFonts, Bungee_400Regular } from '@expo-google-fonts/bungee';
 
 
 //page when clicking bus card, shows more details about the route and arrival times, walking time, and a scrollable list of past arrivals at that stop
@@ -25,13 +26,17 @@ export default function RouteDetail() {
     }
     loadStops();
   }, [routeId]);
+  const [fontsLoaded] = useFonts({ Bungee_400Regular });
+  if (!fontsLoaded) return null;
 
   return (
    
       <View style={{ flex: 1 }}>
     <ScrollView style={[styles.container, { backgroundColor: color }]}>
       
-      <Text style={styles.backBtn} onPress={() => router.back()}>X</Text>
+    <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+  <Text style={styles.backBtnText}>X</Text>
+</TouchableOpacity>
 
       <View style={styles.header}>
         <Text style={styles.routeName}>{route}</Text>
@@ -108,10 +113,19 @@ export default function RouteDetail() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    backgroundColor: '#F08C21',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 20,
+    marginTop: 60,
+  },
+  backBtnText: {
     color: 'white',
-    fontSize: 24,
-    padding: 20,
-    paddingTop: 60,
+    fontSize: 30,
+    fontFamily: 'Bungee_400Regular',
   },
   header: {
     padding: 20,
@@ -119,8 +133,8 @@ const styles = StyleSheet.create({
   },
   routeName: {
     fontSize: 72,
-    fontWeight: '900',
     color: 'white',
+    fontFamily: 'Bungee_400Regular',
   },
   destination: {
     fontSize: 16,
