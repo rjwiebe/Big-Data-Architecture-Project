@@ -1,0 +1,121 @@
+substitutions:
+  _REGION: us-central1
+  _JOB_NAME: rtd-live-data
+  _AR_REPO: rtd-containers
+  _IMAGE_NAME: rtd-live-data
+  _IMAGE_TAG: ""
+  _POSTGRES_DSN_SECRET: live-data-postgres-dsn
+  _REDIS_URL_SECRET: ""
+  _RUNTIME_SERVICE_ACCOUNT: ""
+  _SCHEDULER_SERVICE_ACCOUNT: ""
+  _SCHEDULER_JOB_NAME: ""
+  _SCHEDULER_LOCATION: ""
+  _SCHEDULE: "* * * * *"
+  _TIME_ZONE: America/Denver
+  _TASK_TIMEOUT: 600s
+  _VPC_NETWORK: ""
+  _VPC_SUBNET: ""
+  _VPC_EGRESS: "private-ranges-only"
+
+steps:
+  - id: build-live-data-image
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+          IMAGE_URI="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_IMAGE_NAME}:${_IMAGE_TAG}"
+          docker build -f live_data/Dockerfile -t "$${IMAGE_URI}" .
+          printf '%s' "$${IMAGE_URI}" > /workspace/live_data_image_uri.txt
+
+  - id: push-live-data-image
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+          IMAGE_URI="$$(cat /workspace/live_data_image_uri.txt)"
+          docker push "$${IMAGE_URI}"
+
+  - id: deploy-cloud-run-job
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+          IMAGE_URI="$$(cat /workspace/live_data_image_uri.txt)"
+          RUNTIME_SERVICE_ACCOUNT="${_RUNTIME_SERVICE_ACCOUNT}"
+
+          DEPLOY_CMD=(
+            gcloud run jobs deploy "${_JOB_NAME}"
+            --project "${PROJECT_ID}"
+            --region "${_REGION}"
+            --image "$${IMAGE_URI}"
+            --service-account "$${RUNTIME_SERVICE_ACCOUNT}"
+            --tasks 1
+            --parallelism 1
+            --max-retries 1
+            --task-timeout "${_TASK_TIMEOUT}"
+            --set-env-vars "RUN_MODE=cron"
+            --set-secrets "POSTGRES_DSN=${_POSTGRES_DSN_SECRET}:latest"
+            --quiet
+          )
+
+          if [[ -n "${_REDIS_URL_SECRET}" ]]; then
+            DEPLOY_CMD+=(--set-secrets "REDIS_URL=${_REDIS_URL_SECRET}:latest")
+          fi
+
+          if [[ -n "${_VPC_NETWORK}" ]]; then
+            DEPLOY_CMD+=(--network "${_VPC_NETWORK}")
+          fi
+
+          if [[ -n "${_VPC_SUBNET}" ]]; then
+            DEPLOY_CMD+=(--subnet "${_VPC_SUBNET}")
+          fi
+
+          if [[ -n "${_VPC_NETWORK}" || -n "${_VPC_SUBNET}" ]]; then
+            DEPLOY_CMD+=(--vpc-egress "${_VPC_EGRESS}")
+          fi
+
+          "$${DEPLOY_CMD[@]}"
+
+  - id: upsert-cloud-scheduler-job
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+          SCHEDULER_LOCATION="${_SCHEDULER_LOCATION}"
+          SCHEDULER_JOB_NAME="${_SCHEDULER_JOB_NAME}"
+          SCHEDULER_SERVICE_ACCOUNT="${_SCHEDULER_SERVICE_ACCOUNT}"
+          RUN_JOB_URI="https://run.googleapis.com/v2/projects/${PROJECT_ID}/locations/${_REGION}/jobs/${_JOB_NAME}:run"
+
+          SCHEDULER_FLAGS=(
+            --location "$${SCHEDULER_LOCATION}"
+            --schedule "${_SCHEDULE}"
+            --time-zone "${_TIME_ZONE}"
+            --uri "$${RUN_JOB_URI}"
+            --http-method POST
+            --message-body "{}"
+            --oauth-service-account-email "$${SCHEDULER_SERVICE_ACCOUNT}"
+            --oauth-token-scope "https://www.googleapis.com/auth/cloud-platform"
+            --attempt-deadline 320s
+          )
+
+          if gcloud scheduler jobs describe "$${SCHEDULER_JOB_NAME}" \
+            --project "${PROJECT_ID}" \
+            --location "$${SCHEDULER_LOCATION}" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http "$${SCHEDULER_JOB_NAME}" \
+              --project "${PROJECT_ID}" \
+              --update-headers "Content-Type=application/json" \
+              "$${SCHEDULER_FLAGS[@]}"
+          else
+            gcloud scheduler jobs create http "$${SCHEDULER_JOB_NAME}" \
+              --project "${PROJECT_ID}" \
+              --headers "Content-Type=application/json" \
+              "$${SCHEDULER_FLAGS[@]}"
+          fi
+
+timeout: 1800s
+options:
+  logging: CLOUD_LOGGING_ONLY

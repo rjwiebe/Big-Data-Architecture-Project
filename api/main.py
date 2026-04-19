@@ -1,6 +1,5 @@
 import logging
 from contextlib import asynccontextmanager
-from datetime import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
@@ -30,7 +29,7 @@ class ScheduleEntryResponse(BaseModel):
     route_long_name: str | None = None
     trip_id: str
     headsign: str | None = None
-    scheduled_arrival: time | None = None
+    scheduled_arrival: str | None = None
     delay_seconds: int = 0
     realtime_status: str
 
