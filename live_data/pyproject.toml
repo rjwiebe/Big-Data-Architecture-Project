@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 rtd-collector = "rtd_collector.main:main"
 rtd-db-migrate = "rtd_collector.migrate:main"
+rtd-static-sync = "rtd_collector.static_sync:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

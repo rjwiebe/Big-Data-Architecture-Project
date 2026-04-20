@@ -31,7 +31,7 @@ export default function RouteDetail() {
 
   return (
    
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: color }}>
     <ScrollView style={[styles.container, { backgroundColor: color }]}>
       
     <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
@@ -83,7 +83,11 @@ export default function RouteDetail() {
        </ScrollView>
 
 
-  <View style={{ height: mapExpanded ? 400 : 150 }}>
+  <View style={{ height: mapExpanded ? 400 : 150,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      overflow: 'hidden',
+   }}>
   <MapScreen
   onAddressChange={() => {}}
   onLocationChange={() => {}}
@@ -111,7 +115,8 @@ export default function RouteDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1,
+   },
   backBtn: {
     width: 50,
     height: 50,
@@ -178,12 +183,12 @@ const styles = StyleSheet.create({
   },
   timelineLine: {
     position: 'absolute',
-    left: 8,
+    left: 5,
     top: 0,
     bottom: 0,
-    width: 3,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 2,
+    width: 20,
+    backgroundColor: '#000000',
+    borderRadius: 10,
   },
   timelineItem: {
     flexDirection: 'row',
@@ -228,7 +233,7 @@ const styles = StyleSheet.create({
   expandBtn: {
     position: 'absolute',
     top: 8,
-    left: 8,
+    left: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 8,
     padding: 6,
@@ -236,7 +241,7 @@ const styles = StyleSheet.create({
   collapseBtn: {
     position: 'absolute',
     top: 8,
-    left: 8,
+    left: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 8,
     padding: 6,

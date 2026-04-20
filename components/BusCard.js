@@ -6,6 +6,7 @@ export default function BusCard({
   destination = 'Waiting for transit data',
   stop = 'No stop information available yet',
   minutes = '--',
+  delay = null,
   color = '#808080',
   nextArrivals = [],
   routeId = null,
@@ -23,8 +24,15 @@ export default function BusCard({
           <View style={styles.cardMid}>
             <Text style={styles.destination}>{destination}</Text>
             <Text style={styles.stop}>{stop}</Text>
+            {delay ? (
+              <View style={[styles.delayBadge, delay.includes('late') ? styles.delayBadgeLate : styles.delayBadgeEarly]}>
+                <Text style={styles.delayBadgeText}>⚠ {delay}</Text>
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.minutes}>{minutes}</Text>
+          <View style={styles.arrivalInfo}>
+            <Text style={styles.minutes}>{minutes}</Text>
+          </View>
         </View>
       </TouchableOpacity>
       );
@@ -57,9 +65,30 @@ export default function BusCard({
         color: 'rgba(255,255,255,0.6)',
         fontSize: 10,
       },
+      arrivalInfo: {
+        alignItems: 'flex-end',
+      },
       minutes: {
         color: 'white',
         fontSize: 16,
+        fontWeight: '700',
+      },
+      delayBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        marginTop: 4,
+      },
+      delayBadgeLate: {
+        backgroundColor: '#C0392B',
+      },
+      delayBadgeEarly: {
+        backgroundColor: '#1E7E34',
+      },
+      delayBadgeText: {
+        color: 'white',
+        fontSize: 10,
         fontWeight: '700',
       },
     });

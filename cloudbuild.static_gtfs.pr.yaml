@@ -1,0 +1,24 @@
+steps:
+  - id: static-gtfs-unit-tests
+    name: python:3.12
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+          python -m pip install --upgrade pip
+          python -m pip install -r live_data/requirements-dev.txt
+          PYTHONPATH=live_data/src python -m unittest discover -s live_data/tests
+
+  - id: static-gtfs-container-smoke-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - live_data/Dockerfile
+      - -t
+      - static-gtfs-ci:latest
+      - .
+
+timeout: 1800s
+options:
+  logging: CLOUD_LOGGING_ONLY

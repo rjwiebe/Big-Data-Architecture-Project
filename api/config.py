@@ -11,6 +11,7 @@ class Settings:
     redis_url: str | None
     allowed_origins: list[str]
     port: int
+    redis_ttl: int
 
 
 def _parse_allowed_origins(raw_value: str | None) -> list[str]:
@@ -31,6 +32,7 @@ def load_settings(*, require_postgres: bool = True) -> Settings:
         redis_url=os.getenv("REDIS_URL") or None,
         allowed_origins=_parse_allowed_origins(os.getenv("ALLOWED_ORIGINS")),
         port=int(os.getenv("PORT", "8080")),
+        redis_ttl=int(os.getenv("REDIS_TTL", "900"))
     )
 
 

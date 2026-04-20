@@ -95,6 +95,7 @@ export default function Index() {
           destination={card.destination}
           stop={card.stop}
           minutes={card.minutes}
+          delay={card.delay}
           color={card.color}
         />
       ))}

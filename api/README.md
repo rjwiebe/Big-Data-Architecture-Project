@@ -35,6 +35,15 @@ This directory contains the FastAPI application for determining the nearest 10 t
    PORT=8080
    ```
 
+4. Configure environment variables in `api/.env`:
+   ```bash
+   POSTGRES_DSN=postgresql://user:password@host:5432/database
+   REDIS_URL=redis://host:6379/0
+   REDIS_TTL=900
+   ALLOWED_ORIGINS=https://your-mobile-preview-host.example.com
+   PORT=8080
+   
+
    `POSTGRES_DSN` is required. `REDIS_URL` and `ALLOWED_ORIGINS` are optional.
 
 5. Run the dev server from the repository root:

@@ -1,6 +1,5 @@
 import logging
 from contextlib import asynccontextmanager
-from datetime import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
@@ -15,7 +14,8 @@ from .services import (
     get_nearest_lines,
     get_stop_schedule_with_realtime,
     get_route_details,
-    get_route_vehicles_realtime
+    get_route_vehicles_realtime,
+    search_routes,
 )
 
 
@@ -29,7 +29,7 @@ class ScheduleEntryResponse(BaseModel):
     route_long_name: str | None = None
     trip_id: str
     headsign: str | None = None
-    scheduled_arrival: time | None = None
+    scheduled_arrival: str | None = None
     delay_seconds: int = 0
     realtime_status: str
 
@@ -112,6 +112,36 @@ async def nearest_lines(
         logger.exception("Failed to load nearest lines")
         raise HTTPException(status_code=500, detail=str(e))
 
+class RouteSearchResult(BaseModel):
+    route_id: str
+    route_short_name: str | None = None
+    route_long_name: str | None = None
+    route_type: int | None = None
+    boarding_stop_id: str
+    boarding_stop_name: str
+    origin_distance_meters: float
+    alighting_stop_id: str
+    alighting_stop_name: str
+    dest_distance_meters: float
+
+
+@router.get("/api/route-search", response_model=list[RouteSearchResult])
+async def route_search(
+    orig_lat: float = Query(..., description="Origin latitude"),
+    orig_lon: float = Query(..., description="Origin longitude"),
+    dest_lat: float = Query(..., description="Destination latitude"),
+    dest_lon: float = Query(..., description="Destination longitude"),
+    limit: int = Query(10, description="Max number of route options to return"),
+    db: DBConnection = Depends(get_db),
+):
+    try:
+        results = await search_routes(db, orig_lat, orig_lon, dest_lat, dest_lon, limit)
+        return results
+    except Exception as e:
+        logger.exception("Failed to search routes")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/api/stops/{stop_id}/schedule", response_model=list[ScheduleEntryResponse])
 async def stop_schedule(
     stop_id: str,
@@ -169,7 +199,11 @@ def create_lifespan(
         if not hasattr(app.state, "db"):
             app.state.db = DBConnection(resolved_settings.postgres_dsn)
         if not hasattr(app.state, "redis"):
-            app.state.redis = RedisClient(resolved_settings.redis_url)
+            # app.state.redis = RedisClient(resolved_settings.redis_url)
+            app.state.redis = RedisClient(
+                resolved_settings.redis_url, 
+                ttl=resolved_settings.redis_ttl
+            )
 
         if connect_external_services:
             await app.state.db.connect()
