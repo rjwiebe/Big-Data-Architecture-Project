@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     margin: 20,
-    marginTop: 60,
+    marginTop: 100,
   },
   backBtnText: {
     color: 'white',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Bungee_400Regular',
   },
   header: {
-    padding: 20,
+    padding: 5,
     alignItems: 'center',
   },
   routeName: {
