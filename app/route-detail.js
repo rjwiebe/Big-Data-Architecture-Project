@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchRouteDetails } from '@/lib/api';
 import MapScreen from '@/components/MapView';
+import { useFonts, Bungee_400Regular } from '@expo-google-fonts/bungee';
 
 
 //page when clicking bus card, shows more details about the route and arrival times, walking time, and a scrollable list of past arrivals at that stop
@@ -25,13 +26,17 @@ export default function RouteDetail() {
     }
     loadStops();
   }, [routeId]);
+  const [fontsLoaded] = useFonts({ Bungee_400Regular });
+  if (!fontsLoaded) return null;
 
   return (
    
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: color }}>
     <ScrollView style={[styles.container, { backgroundColor: color }]}>
       
-      <Text style={styles.backBtn} onPress={() => router.back()}>X</Text>
+    <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+  <Text style={styles.backBtnText}>X</Text>
+</TouchableOpacity>
 
       <View style={styles.header}>
         <Text style={styles.routeName}>{route}</Text>
@@ -78,7 +83,11 @@ export default function RouteDetail() {
        </ScrollView>
 
 
-  <View style={{ height: mapExpanded ? 400 : 150 }}>
+  <View style={{ height: mapExpanded ? 400 : 150,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      overflow: 'hidden',
+   }}>
   <MapScreen
   onAddressChange={() => {}}
   onLocationChange={() => {}}
@@ -106,21 +115,31 @@ export default function RouteDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1,
+   },
   backBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    backgroundColor: '#F08C21',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 20,
+    marginTop: 100,
+  },
+  backBtnText: {
     color: 'white',
-    fontSize: 24,
-    padding: 20,
-    paddingTop: 60,
+    fontSize: 30,
+    fontFamily: 'Bungee_400Regular',
   },
   header: {
-    padding: 20,
+    padding: 5,
     alignItems: 'center',
   },
   routeName: {
     fontSize: 72,
-    fontWeight: '900',
     color: 'white',
+    fontFamily: 'Bungee_400Regular',
   },
   destination: {
     fontSize: 16,
@@ -164,12 +183,12 @@ const styles = StyleSheet.create({
   },
   timelineLine: {
     position: 'absolute',
-    left: 8,
+    left: 5,
     top: 0,
     bottom: 0,
-    width: 3,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 2,
+    width: 20,
+    backgroundColor: '#000000',
+    borderRadius: 10,
   },
   timelineItem: {
     flexDirection: 'row',
@@ -214,7 +233,7 @@ const styles = StyleSheet.create({
   expandBtn: {
     position: 'absolute',
     top: 8,
-    left: 8,
+    left: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 8,
     padding: 6,
@@ -222,7 +241,7 @@ const styles = StyleSheet.create({
   collapseBtn: {
     position: 'absolute',
     top: 8,
-    left: 8,
+    left: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 8,
     padding: 6,

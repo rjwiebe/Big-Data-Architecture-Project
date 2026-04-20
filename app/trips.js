@@ -95,7 +95,8 @@ export default function Trips() {
             onLocationChange={setCoords}
           />
           <View style={styles.headerOverlay}>
-            <Header street={street} city={city} />
+            <Header street={street} city={city} showBackButton={true} 
+  showSearch={false}  />
           </View>
         </View>
 
@@ -188,8 +189,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapContainer: {
-    height: 200,
-    overflow: 'hidden',
+    height: 300,
   },
   headerOverlay: {
     position: 'absolute',
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F08C21',
     paddingHorizontal: 16,
     paddingTop: 16,
   },
@@ -209,27 +209,27 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   locationDot: {
+    backgroundColor: '#FFFFFF',
     width: 14,
     height: 14,
-    borderRadius: 7,
     flexShrink: 0,
   },
   dotOrigin: {
-    backgroundColor: '#22c55e',
+    borderRadius:7,
   },
   dotDest: {
-    backgroundColor: '#ef4444',
+    borderRadius: 5,
   },
   routeConnector: {
     width: 2,
-    height: 10,
-    backgroundColor: '#ccc',
+    height: 20,
+    backgroundColor: '#FFFFFF',
     marginLeft: 6,
     marginVertical: 3,
   },
   inputWrap: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   searchBtn: {
-    backgroundColor: '#F08C21',
+    backgroundColor: '#6698CC',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   searchBtnDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#A7BFD8',
   },
   searchBtnText: {
     color: '#fff',
@@ -285,20 +285,21 @@ const styles = StyleSheet.create({
   },
   centerMsgText: {
     fontSize: 15,
-    color: '#555',
+    color: 'black',
     textAlign: 'center',
   },
   hintText: {
     fontSize: 13,
-    color: '#999',
+    color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 20,
     paddingTop: 8,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#b91c1c',
     textAlign: 'center',
     paddingHorizontal: 16,
+    fontWeight: '500',
   },
 });
