@@ -24,18 +24,46 @@ const STATE_RESULTS = 'results';
 const STATE_EMPTY = 'empty';
 const STATE_ERROR = 'error';
 
+// Module-level vars persist FROM/TO across tab navigation
+let _persistedFrom = '';
+let _persistedDest = '';
+let _fromIsGps = true;
+
 export default function Trips() {
   const [street, setStreet] = useState(null);
   const [city, setCity] = useState(null);
   const [coords, setCoords] = useState(null);
-  const [destText, setDestText] = useState('');
+  const [fromText, setFromText] = useState(_persistedFrom);
+  const [destText, setDestText] = useState(_persistedDest);
   const [results, setResults] = useState([]);
   const [searchState, setSearchState] = useState(STATE_IDLE);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const handleAddressChange = useCallback((s, c) => {
+    setStreet(s);
+    setCity(c);
+    // Only auto-fill FROM if user hasn't manually typed something
+    if (_fromIsGps && s) {
+      setFromText(s);
+      _persistedFrom = s;
+    }
+  }, []);
+
+  const handleFromChange = useCallback((text) => {
+    setFromText(text);
+    _persistedFrom = text;
+    _fromIsGps = false;
+  }, []);
+
+  const handleDestChange = useCallback((text) => {
+    setDestText(text);
+    _persistedDest = text;
+  }, []);
+
   const handleSearch = useCallback(async () => {
     Keyboard.dismiss();
-    if (!coords) {
+
+    if (!fromText.trim() && !coords) {
       setErrorMsg('Still waiting for your location. Try again in a moment.');
       setSearchState(STATE_ERROR);
       return;
@@ -56,17 +84,36 @@ export default function Trips() {
     setResults([]);
 
     try {
-      const geocoded = await Location.geocodeAsync(destText.trim());
-      if (!geocoded || geocoded.length === 0) {
-        setErrorMsg("Couldn't find that address. Try something more specific.");
+      // Resolve origin — use GPS coords when FROM is still the auto-filled GPS address
+      let originCoords;
+      if (_fromIsGps && coords) {
+        originCoords = coords;
+      } else {
+        if (!fromText.trim()) {
+          setErrorMsg('Please enter an origin address.');
+          setSearchState(STATE_ERROR);
+          return;
+        }
+        const geocodedFrom = await Location.geocodeAsync(fromText.trim());
+        if (!geocodedFrom || geocodedFrom.length === 0) {
+          setErrorMsg("Couldn't find that origin address. Try something more specific.");
+          setSearchState(STATE_ERROR);
+          return;
+        }
+        originCoords = geocodedFrom[0];
+      }
+
+      const geocodedDest = await Location.geocodeAsync(destText.trim());
+      if (!geocodedDest || geocodedDest.length === 0) {
+        setErrorMsg("Couldn't find that destination. Try something more specific.");
         setSearchState(STATE_ERROR);
         return;
       }
 
-      const destCoords = geocoded[0];
+      const destCoords = geocodedDest[0];
       const routes = await fetchRouteSearch({
-        origLat: coords.latitude,
-        origLon: coords.longitude,
+        origLat: originCoords.latitude,
+        origLon: originCoords.longitude,
         destLat: destCoords.latitude,
         destLon: destCoords.longitude,
         limit: 10,
@@ -82,7 +129,7 @@ export default function Trips() {
       setErrorMsg('Search failed. Check your connection and try again.');
       setSearchState(STATE_ERROR);
     }
-  }, [coords, destText]);
+  }, [coords, fromText, destText]);
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -93,11 +140,11 @@ export default function Trips() {
         {/* Map preview at top */}
         <View style={styles.mapContainer}>
           <MapScreen
-            onAddressChange={(s, c) => { setStreet(s); setCity(c); }}
+            onAddressChange={handleAddressChange}
             onLocationChange={setCoords}
           />
           <View style={styles.headerOverlay}>
-            <Header street={street} city={city} showBackButton={true} 
+            <Header street={street} city={city} showBackButton={true}
   showSearch={false}  />
           </View>
         </View>
@@ -107,11 +154,18 @@ export default function Trips() {
           {/* Origin row */}
           <View style={styles.inputRow}>
             <View style={[styles.locationDot, styles.dotOrigin]} />
-            <View style={styles.inputWrap}>
+            <View style={[styles.inputWrap, styles.inputWrapOrigin]}>
               <Text style={styles.inputLabel}>FROM</Text>
-              <Text style={styles.inputValueStatic} numberOfLines={1}>
-                {street || 'My Location'}
-              </Text>
+              <TextInput
+                style={styles.fromInput}
+                placeholder="My Location"
+                placeholderTextColor="rgba(0,0,0,0.35)"
+                value={fromText}
+                onChangeText={handleFromChange}
+                onSubmitEditing={handleSearch}
+                returnKeyType="next"
+                autoCorrect={false}
+              />
             </View>
           </View>
 
@@ -127,7 +181,7 @@ export default function Trips() {
                 placeholder="Enter destination address..."
                 placeholderTextColor="rgba(0,0,0,0.35)"
                 value={destText}
-                onChangeText={setDestText}
+                onChangeText={handleDestChange}
                 onSubmitEditing={handleSearch}
                 returnKeyType="search"
                 autoCorrect={false}
@@ -235,6 +289,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  inputWrapOrigin: {
+    borderWidth: 1.5,
+    borderColor: '#F08C21',
+  },
   inputWrapDest: {
     borderWidth: 1.5,
     borderColor: '#F08C21',
@@ -250,6 +308,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1a1a1a',
     fontWeight: '500',
+  },
+  fromInput: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    padding: 0,
+    margin: 0,
   },
   destInput: {
     fontSize: 14,
