@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import * as Location from 'expo-location';
@@ -33,6 +34,7 @@ export default function Trips() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSearch = useCallback(async () => {
+    Keyboard.dismiss();
     if (!coords) {
       setErrorMsg('Still waiting for your location. Try again in a moment.');
       setSearchState(STATE_ERROR);
