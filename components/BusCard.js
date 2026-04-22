@@ -1,5 +1,6 @@
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import {useRouter} from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useFonts, Bungee_400Regular } from '@expo-google-fonts/bungee';
 
 export default function BusCard({
   route = 'RTD',
@@ -13,6 +14,7 @@ export default function BusCard({
   stopId = null,
 }) {
     const router = useRouter();
+    const [fontsLoaded] = useFonts({ Bungee_400Regular });
     return (
       <TouchableOpacity onPress={() => router.push({
         pathname: '/route-detail',
@@ -49,7 +51,7 @@ export default function BusCard({
       routeName: {
         color: 'white',
         fontSize: 28,
-        fontWeight: '900',
+        fontFamily: 'Bungee_400Regular',
         minWidth: 52,
       },
       cardMid: {
